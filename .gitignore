@@ -1,0 +1,25 @@
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+
+# Firebase private credentials
+*firebase-adminsdk*.json
+serviceAccount*.json
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
