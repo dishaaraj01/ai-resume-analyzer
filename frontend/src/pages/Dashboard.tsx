@@ -1,5 +1,3 @@
-
-
 import { useEffect, useState } from "react";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -14,8 +12,6 @@ import {
 
   LogOut,
 
-  BriefcaseBusiness,
-
 } from "lucide-react";
 
 import { subscribeToAuthChanges, logoutUser } from "../firebase/auth";
@@ -25,81 +21,135 @@ import { uploadResume } from "../services/resumeApi";
 import { matchJob } from "../services/jobApi";
 
 import { getAIFeedback } from "../services/aiFeedbackApi";
+
 import { saveResumeHistory } from "../firebase/resumeHistory";
 
-
 function renderInlineMarkdown(text: string) {
+
   return text.split(/(\*\*.*?\*\*)/g).map((part, index) => {
+
     if (part.startsWith("**") && part.endsWith("**")) {
+
       return <strong key={index}>{part.slice(2, -2)}</strong>;
+
     }
+
     return part;
+
   });
+
 }
 
 function FormattedFeedback({ text }: { text: string }) {
+
   const lines = text.split("\n");
 
   return (
+
     <div className="space-y-3 text-sm leading-7 text-slate-700">
+
       {lines.map((line, index) => {
+
         const trimmed = line.trim();
 
         if (!trimmed || trimmed === "---" || trimmed === "***") {
+
           return <div key={index} className="h-1" />;
+
         }
 
         if (trimmed.startsWith("### ")) {
+
           return (
+
             <h4 key={index} className="pt-2 text-base font-bold text-slate-900">
+
               {renderInlineMarkdown(trimmed.replace(/^###\s+/, ""))}
+
             </h4>
+
           );
+
         }
 
         if (trimmed.startsWith("## ")) {
+
           return (
+
             <h4 key={index} className="pt-2 text-lg font-bold text-slate-900">
+
               {renderInlineMarkdown(trimmed.replace(/^##\s+/, ""))}
+
             </h4>
+
           );
+
         }
 
         if (trimmed.startsWith("# ")) {
+
           return (
+
             <h4 key={index} className="pt-2 text-xl font-bold text-slate-900">
+
               {renderInlineMarkdown(trimmed.replace(/^#\s+/, ""))}
+
             </h4>
+
           );
+
         }
 
-        if (/^[-*]\s+/.test(trimmed)) {
+        if (/^[-\*]\s+/.test(trimmed)) {
+
           return (
+
             <div key={index} className="flex gap-2 pl-1">
+
               <span className="font-bold text-purple-600">•</span>
+
               <p className="min-w-0 flex-1">
-                {renderInlineMarkdown(trimmed.replace(/^[-*]\s+/, ""))}
+
+                {renderInlineMarkdown(trimmed.replace(/^[-\*]\s+/, ""))}
+
               </p>
+
             </div>
+
           );
+
         }
 
         return <p key={index}>{renderInlineMarkdown(trimmed)}</p>;
+
       })}
+
     </div>
+
   );
+
 }
 
 function normalizeJobDescription(text: string) {
+
   return text
+
     .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+
     .replace(/\*\*(.*?)\*\*/g, "$1")
+
     .replace(/__(.*?)__/g, "$1")
+
     .replace(/^\s*[-*+]\s+/gm, "• ")
+
     .replace(/^\s*[•▪◦]\s+/gm, "• ")
+
     .replace(/^\s*\d+\.\s+/gm, "• ")
+
     .replace(/^\s*---+\s*$/gm, "")
+
     .trim();
+
 }
 
 interface ResumeAnalysis {
@@ -135,7 +185,9 @@ interface JobMatchResult {
 export default function Dashboard() {
 
   const [userEmail, setUserEmail] = useState("");
+
   const [userId, setUserId] = useState("");
+
   const [historyError, setHistoryError] = useState("");
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -177,6 +229,7 @@ export default function Dashboard() {
       }
 
       setUserEmail(user.email || "");
+
       setUserId(user.uid);
 
     });
@@ -212,25 +265,43 @@ export default function Dashboard() {
       const response = await uploadResume(selectedFile);
 
       setAnalysis(response.analysis);
+
       setResumeText(response.resume_text);
+
       setAiFeedback("");
+
       setJobResult(null);
 
       if (userId) {
+
         try {
+
           await saveResumeHistory({
+
             userId,
+
             resumeFileName: selectedFile.name,
+
             analysis: response.analysis,
+
             aiFeedback: "",
+
             jobDescription: "",
+
             jobMatch: null,
+
           });
+
           setHistoryError("");
+
         } catch (historySaveError) {
+
           console.error("Could not save resume history:", historySaveError);
+
           setHistoryError("Resume analyzed, but saving history failed. Check Firestore security rules and your connection.");
+
         }
+
       }
 
     } catch (error: unknown) {
@@ -288,23 +359,39 @@ export default function Dashboard() {
     try {
 
       const response = await matchJob(resumeText, normalizeJobDescription(jobDescription));
+
       setJobResult(response.result);
 
       if (userId) {
+
         try {
+
           await saveResumeHistory({
+
             userId,
+
             resumeFileName: selectedFile?.name || "Resume",
+
             analysis,
+
             aiFeedback,
+
             jobDescription: normalizeJobDescription(jobDescription),
+
             jobMatch: response.result,
+
           });
+
           setHistoryError("");
+
         } catch (historySaveError) {
+
           console.error("Could not save job-match history:", historySaveError);
+
           setHistoryError("Job match completed, but saving history failed. Check Firestore security rules and your connection.");
+
         }
+
       }
 
     } catch (error: unknown) {
@@ -354,27 +441,45 @@ const handleAIFeedback = async () => {
   try {
 
     const response = await getAIFeedback(
+
       resumeText,
+
       normalizeJobDescription(jobDescription)
+
     );
 
     setAiFeedback(response.feedback);
 
     if (userId) {
+
       try {
+
         await saveResumeHistory({
+
           userId,
+
           resumeFileName: selectedFile?.name || "Resume",
+
           analysis,
+
           aiFeedback: response.feedback,
+
           jobDescription: normalizeJobDescription(jobDescription),
+
           jobMatch: jobResult,
+
         });
+
         setHistoryError("");
+
       } catch (historySaveError) {
+
         console.error("Could not save AI-feedback history:", historySaveError);
+
         setHistoryError("AI feedback generated, but saving history failed. Check Firestore security rules and your connection.");
+
       }
+
     }
 
   } catch (error: unknown) {
@@ -438,11 +543,17 @@ const handleAIFeedback = async () => {
           <div className="flex items-center gap-3">
 
             <Link
+
               to="/resume-history"
+
               className="flex items-center gap-2 rounded-lg border border-purple-200 px-4 py-2 text-sm font-medium text-purple-700 transition hover:bg-purple-50"
+
             >
+
               <FileText size={16} />
+
               Resume History
+
             </Link>
 
             <span className="text-sm text-slate-500">{userEmail}</span>
@@ -477,6 +588,15 @@ const handleAIFeedback = async () => {
 
         </p>
 
+        {historyError && (
+          <div
+            role="alert"
+            className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          >
+            {historyError}
+          </div>
+        )}
+
         <div className="mt-10 grid gap-6 md:grid-cols-3">
 
           <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -484,6 +604,7 @@ const handleAIFeedback = async () => {
             <FileText size={28} />
 
             <h2 className="mt-5 text-xl font-semibold">Resume Analysis</h2>
+
             <p className="mt-2 text-sm text-slate-500">
 
               Upload a PDF or DOCX resume to get an ATS-style analysis.
@@ -491,11 +612,17 @@ const handleAIFeedback = async () => {
             </p>
 
             <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-purple-400 hover:bg-purple-50">
+
               <FileText size={30} className="mb-2 text-slate-500" />
+
               <span className="font-semibold text-slate-800">Choose your resume</span>
+
               <span className="mt-1 text-xs text-slate-500">PDF or DOCX</span>
+
               <span className="mt-3 rounded-lg bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm ring-1 ring-slate-200">Browse files</span>
+
               <input type="file" accept=".pdf,.docx" onChange={(event) => { setSelectedFile(event.target.files?.[0] || null); setUploadError(""); }} className="sr-only" />
+
             </label>
 
             {selectedFile && (
@@ -623,51 +750,97 @@ const handleAIFeedback = async () => {
         <div className="mt-10 grid gap-6 md:grid-cols-3">
 
           <section className="rounded-2xl bg-white p-6 shadow-sm md:col-span-2">
+
             <div className="flex items-center gap-3">
+
               <Target size={28} />
+
               <h2 className="text-xl font-semibold">Job Matching</h2>
+
             </div>
+
             <p className="mt-2 text-sm text-slate-500">Paste the job description to compare its requirements with your resume.</p>
+
             <textarea
+
               value={jobDescription}
+
               onChange={(event) => setJobDescription(event.target.value)}
+
               onPaste={(event) => {
+
                 event.preventDefault();
+
                 const pastedText = event.clipboardData.getData("text");
+
                 setJobDescription(normalizeJobDescription(pastedText));
+
                 setJobError("");
+
                 setJobResult(null);
+
               }}
+
               placeholder="Paste the full job description here..."
+
               rows={6}
+
               className="mt-5 w-full rounded-xl border border-slate-300 p-4 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+
             />
+
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+
               <p className="text-xs text-slate-500">Markdown headings and bold markers are removed when you paste or clean the text.</p>
+
               <button
+
                 type="button"
+
                 onClick={() => {
+
                   setJobDescription(normalizeJobDescription(jobDescription));
+
                   setJobError("");
+
                   setJobResult(null);
+
                 }}
+
                 className="text-sm font-medium text-purple-700 underline underline-offset-2 hover:text-purple-900"
+
               >
+
                 Clean formatting
+
               </button>
+
             </div>
+
             {jobError && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{jobError}</p>}
+
             <button onClick={handleJobMatch} disabled={matching || !jobDescription.trim()} className="mt-4 rounded-lg bg-slate-900 px-6 py-3 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">{matching ? "Analyzing Job Match..." : "Analyze Job Match"}</button>
+
             {jobResult && <div className="mt-8 border-t border-slate-200 pt-6">
+
               <h3 className="text-lg font-bold text-slate-900">Job Match Analysis</h3>
+
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
+
                 <div className="rounded-xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Overall Match</p><p className="mt-2 text-3xl font-bold">{jobResult.match_score}%</p></div>
+
                 <div className="rounded-xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Text Similarity</p><p className="mt-2 text-3xl font-bold">{jobResult.text_similarity}%</p></div>
+
                 <div className="rounded-xl bg-slate-50 p-4"><p className="text-sm text-slate-500">Skill Match</p><p className="mt-2 text-3xl font-bold">{jobResult.skill_match_score}%</p></div>
+
               </div>
+
               <h4 className="mt-6 font-semibold">Matching Skills</h4><div className="mt-3 flex flex-wrap gap-2">{jobResult.matching_skills.length ? jobResult.matching_skills.map((skill) => <span key={skill} className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-800">{skill}</span>) : <p className="text-sm text-slate-500">No matching skills detected.</p>}</div>
+
               <h4 className="mt-6 font-semibold">Skills to Develop</h4><div className="mt-3 flex flex-wrap gap-2">{jobResult.missing_skills.length ? jobResult.missing_skills.map((skill) => <span key={skill} className="rounded-full bg-red-100 px-3 py-1 text-sm text-red-800">{skill}</span>) : <p className="text-sm text-slate-500">No missing skills detected from the current skill list.</p>}</div>
+
             </div>}
+
           </section>
 
           <section className="rounded-2xl bg-white p-6 shadow-sm">
@@ -695,8 +868,6 @@ const handleAIFeedback = async () => {
           </section>
 
         </div>
-
-
 
           <section className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
