@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../firebase/auth";
 
 export default function Login() {
@@ -6,6 +8,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,9 +19,13 @@ export default function Login() {
 
     try {
       await loginUser(email, password);
-      alert("Login successful!");
-    } catch (err: any) {
-      setError(err.message);
+      navigate("/dashboard", { replace: true });
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Login failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -39,13 +47,13 @@ export default function Login() {
             <label className="mb-2 block text-sm font-medium">
               Email
             </label>
-
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
+              autoComplete="email"
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
             />
           </div>
@@ -54,13 +62,13 @@ export default function Login() {
             <label className="mb-2 block text-sm font-medium">
               Password
             </label>
-
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder="Enter your password"
               required
+              autoComplete="current-password"
               className="w-full rounded-lg border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
             />
           </div>
@@ -82,9 +90,12 @@ export default function Login() {
 
         <p className="mt-6 text-center text-sm text-slate-500">
           Don't have an account?{" "}
-          <span className="font-medium text-slate-900">
+          <Link
+            to="/register"
+            className="font-medium text-slate-900 hover:underline"
+          >
             Register
-          </span>
+          </Link>
         </p>
       </div>
     </div>
