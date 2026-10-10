@@ -23,3 +23,6 @@ serviceAccount*.json
 # OS
 .DS_Store
 Thumbs.db
+
+frontend/src/pages/Dashboard-backup.tsx
+backend/uploads/
