@@ -185,8 +185,8 @@ interface JobMatchResult {
 export default function Dashboard() {
 
   const [userEmail, setUserEmail] = useState("");
-
   const [userId, setUserId] = useState("");
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [historyError, setHistoryError] = useState("");
 
@@ -217,26 +217,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-
     const unsubscribe = subscribeToAuthChanges((user) => {
-
       if (!user) {
-
-        navigate("/login");
-
+        setAuthLoading(false);
+        navigate("/login", { replace: true });
         return;
-
       }
 
       setUserEmail(user.email || "");
-
       setUserId(user.uid);
+      setAuthLoading(false);
+  });
 
-    });
-
-    return () => unsubscribe();
-
-  }, [navigate]);
+  return () => unsubscribe();
+}, [navigate]);
 
   const handleResumeUpload = async () => {
 
@@ -525,7 +519,13 @@ const handleAIFeedback = async () => {
     navigate("/login");
 
   };
-
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="text-slate-600">Checking your login...</p>
+      </div>
+    );
+  }
   return (
 
     <div className="min-h-screen bg-slate-50">
