@@ -18,6 +18,7 @@ app.include_router(resume_router)
 app.include_router(job_router)
 
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -25,11 +26,14 @@ app.add_middleware(
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
+        "https://ai-resume-analyzer-alpha-hazel.vercel.app",
+        "https://ai-resume-analyzer-24n28j5sl-ai-resume-analyzer12.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 @app.get("/health")
